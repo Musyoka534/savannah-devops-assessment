@@ -82,3 +82,47 @@ From the `simple-web-app` folder, run:
 
 ```bash
 docker-compose up --build
+```
+
+## Task 3: Infrastructure as Code (IaC) (DevOps and Cloud Engineering)
+### Objective:
+Use an IaC tool of your choice(Terraform, Pulumi, CloudFormation, Bicep or OpenTofu) to define and deploy resources.
+### Approach:
+I chose Terraform because it is cloud-agnostic, making the infrastructure definitions portable and reusable across different cloud providers.
+I deployed resources on AWS cloud, including networking, compute, and Kubernetes infrastructure. This setup lays the foundation for deploying the containerized application in Task 4 on Amazon EKS with load balancing.
+
+#### 1.Networking (VPC & Subnets)
+
+- Created a VPC with both public and private subnets across multiple Availability Zones.
+
+- Attached an Internet Gateway and configured route tables for public subnet internet access.
+
+- Created private subnets for the EKS worker nodes to improve security.
+
+#### 2.Security Groups
+
+- Created a security group for the EC2 instance with: Ports 22 open for SSH and 80(http) for web traffic.
+
+- Created security groups for the EKS cluster and nodes, allowing secure communication between control plane, worker nodes, and load balancers.
+
+#### 3.EC2 Instance with Static IP
+
+- Provisioned an EC2 instance
+
+- Used Terraform tls_private_key and aws_key_pair to automatically generate and manage SSH keys.
+
+- Associated an Elastic IP (EIP) to ensure the instance has a static public IP.
+
+#### 4.EKS Cluster Setup
+
+- provisioned an EKS cluster with worker node groups inside private subnets.
+
+- Integrated with IAM roles for cluster and node authentication.
+
+#### 5.AWS Load Balancer Controller
+
+- Deployed the AWS Load Balancer Controller into the EKS cluster via Terraform Helm provider.
+
+- This enables the cluster to provision Application Load Balancers (ALB) and Network Load Balancers (NLB) for Kubernetes Ingress resources.
+
+- Configured IAM policies via Terraform to grant the controller permissions for managing AWS load balancers.
