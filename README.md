@@ -23,7 +23,6 @@ Set up a Git repository for a simple web application, make meaningful commits, a
 
 - Staged and committed the changes with clear, descriptive commit messages,Opened Pull requests against the main branch and merged code.
 
-> **Note:** The source code for Task 1 is located in the **`simple-web-app`** folder.
 
 
 ## Task 2: Containerization with Docker
@@ -37,11 +36,7 @@ The container runs an **Nginx server** to serve the static web files.
 
 ### 1. Navigate to the Project Root
 Go to the folder where the `Dockerfile` is located.  
-In this case:  
 
-```bash
-cd simple-web-app
-```
 ### 2 . Build the Docker Image
 Run the following command to build the Docker image:
 
