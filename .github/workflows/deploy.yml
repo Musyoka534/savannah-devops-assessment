@@ -1,0 +1,56 @@
+name: Build and Deploy to EKS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+  #CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+  #DEPLOYMENT_NAME: ${{ secrets.DEPLOYMENT_NAME }}
+  #CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE }} # OIDC IAM role
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: github-actions
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: Get version from VERSION file
+        id: get-version
+        run: |
+          if [ -f VERSION ]; then
+            VERSION=$(cat VERSION)
+          else
+           echo "VERSION file not found. Exiting..."
+           exit 1
+          fi
+          echo "Current version: $VERSION"
+          echo ::set-output name=version::$VERSION
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.get-version.outputs.version }} .
+
+      - name: Tag Docker image with semantic version
+        run: |
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.get-version.outputs.version }} $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.get-version.outputs.version }}
+      
+      - name: Push Docker image to ECR
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.get-version.outputs.version }}
