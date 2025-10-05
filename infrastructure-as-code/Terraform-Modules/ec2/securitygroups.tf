@@ -8,7 +8,7 @@ resource "aws_security_group" "ec2" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]  # Restrict this to your IP or range for security
-    description = "Allow ssh Access from CAREPAY NETWORK"
+    description = "Allow ssh Access from YOUR NETWORK"
   }
   # Allow HTTP from the internet
   ingress {
