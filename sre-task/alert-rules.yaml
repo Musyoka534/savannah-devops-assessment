@@ -1,0 +1,20 @@
+groups:
+  - name: app-alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: sum(rate(container_cpu_usage_seconds_total{namespace="web"}[2m])) > 0.8
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU usage on savannah-web"
+          description: "CPU usage exceeded 80% for >2 minutes."
+
+      - alert: AppDown
+        expr: kube_deployment_status_replicas_unavailable{deployment="savannah-web"} > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "savannah-web deployment unavailable"
+          description: "No available replicas for savannah-web."

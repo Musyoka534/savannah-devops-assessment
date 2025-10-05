@@ -1,23 +1,26 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: savannah-web-ingress
-  namespace: web
+  name: grafana-dashboard-ingress
+  namespace: monitoring
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/group.name: devops-tools
+    alb.ingress.kubernetes.io/healthcheck-path: /
     alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/success-codes: "200-399"
+    alb.ingress.kubernetes.io/group.order: '2'
 spec:
   ingressClassName: alb
   rules:
-    - host: web.193801312183.realhandsonlabs.net
+    - host: grafana.193801312183.realhandsonlabs.net
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: savannah-web-svc
+                name: prometheus-grafana
                 port:
                   number: 80
