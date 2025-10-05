@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: savannah-web-svc
+  namespace: web
+  labels:
+    app: savannah-web
+spec:
+  type: ClusterIP
+  selector:
+    app: savannah-web
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP

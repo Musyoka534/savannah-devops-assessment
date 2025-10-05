@@ -10,29 +10,37 @@ permissions:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  #CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
-  #DEPLOYMENT_NAME: ${{ secrets.DEPLOYMENT_NAME }}
-  #CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+  CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # -------------------------------------
+      # Checkout code
+      # -------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
-
+      # -------------------------------------
+      # Configure AWS credentials using OIDC
+      # -------------------------------------
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE }} # OIDC IAM role
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: github-actions
-
+      # -------------------------------------
+      # Login to Amazon ECR
+      # -------------------------------------
       - name: Login to Amazon ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
-      
+      # -------------------------------------
+      # Get version from VERSION file
+      # -------------------------------------
       - name: Get version from VERSION file
         id: get-version
         run: |
@@ -44,8 +52,9 @@ jobs:
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $VERSION"
-
-
+      # -------------------------------------
+      # Build and Push Docker image
+      # -------------------------------------
       - name: Build Docker image
         run: |
           docker build -t ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.get-version.outputs.version }} .
@@ -57,3 +66,35 @@ jobs:
           docker push ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.get-version.outputs.version }}
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+
+      # -------------------------------------
+      # Update kubeconfig for EKS
+      # -------------------------------------
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
+      - name: Verify cluster access
+        run: kubectl get nodes
+
+      # -------------------------------------
+      # Update image in Kubernetes manifests
+      # -------------------------------------
+      - name: Update image in manifests
+        run: |
+          IMAGE=${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.get-version.outputs.version }}
+          echo "Updating image to $IMAGE"
+          sed -i "s|image: .*|image: $IMAGE|g" kubernetes-manifests/deployment.yaml
+          echo "Updated deployment.yaml:"
+          grep "image:" kubernetes-manifests/deployment.yaml
+
+      # -------------------------------------
+      # Deploy to EKS
+      # -------------------------------------
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f kubernetes-manifests/
+
+      - name: Verify rollout status
+        run: |
+          kubectl rollout status deployment/savannah-web -n web
