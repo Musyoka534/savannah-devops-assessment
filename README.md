@@ -396,3 +396,93 @@ Click Import
 
 
 
+## Task 6: Ansible Configuration Management
+### Objective:
+Write an ansible playbook that configures the Virtual Machine provisioned in Task 3
+
+### Prerequisites
+
+1. VM Provisioned – A VM (Amazon Linux 2023) was created in Task 3.
+
+2. SSH Access – Ensure a non-root user (e.g., ansible) can access the VM with SSH keys.
+
+3. Ansible Control Node – Ansible installed on your local machine or control VM.
+
+4. Inventory File – inventory.yaml specifying the target host(s).
+
+### Directory structure
+```
+├── files
+│   └── config.txt
+├── inventory.yaml
+└── playbook.yaml
+```
+
+- files/config.txt – Sample configuration file to be copied to the target vm
+
+- inventory.yaml – Hosts definition for Ansible.
+
+- playbook.yaml – Main Ansible playbook.
+
+### Running the Playbook
+```
+ansible-playbook -i inventory.yaml playbook.yaml
+```
+
+### Validation / Screenshots
+1. Check PostgreSQL service
+```
+[ec2-user@ip-172-31-20-229 ~]$ sudo systemctl status postgresql
+● postgresql.service - PostgreSQL database server
+     Loaded: loaded (/usr/lib/systemd/system/postgresql.service; enabled; preset: disabled)
+     Active: active (running) since Sun 2025-10-05 16:12:14 UTC; 18min ago
+   Main PID: 42000 (postgres)
+      Tasks: 7 (limit: 1106)
+     Memory: 19.3M
+        CPU: 186ms
+     CGroup: /system.slice/postgresql.service
+             ├─42000 /usr/bin/postgres -D /var/lib/pgsql/data
+             ├─42001 "postgres: logger "
+             ├─42002 "postgres: checkpointer "
+             ├─42003 "postgres: background writer "
+             ├─42005 "postgres: walwriter "
+             ├─42006 "postgres: autovacuum launcher "
+             └─42007 "postgres: logical replication launcher "
+
+Oct 05 16:12:14 ip-172-31-20-229.ec2.internal systemd[1]: Starting postgresql.service - PostgreSQL database server...
+Oct 05 16:12:14 ip-172-31-20-229.ec2.internal postgres[42000]: 2025-10-05 16:12:14.829 UTC [42000] LOG:  redirecting log output to logging collector process
+Oct 05 16:12:14 ip-172-31-20-229.ec2.internal postgres[42000]: 2025-10-05 16:12:14.829 UTC [42000] HINT:  Future log output will appear in directory "log".
+Oct 05 16:12:14 ip-172-31-20-229.ec2.internal systemd[1]: Started postgresql.service - PostgreSQL database server.
+```
+2. Check nginx service
+```
+[ec2-user@ip-172-31-20-229 ~]$ sudo systemctl status nginx
+● nginx.service - The nginx HTTP and reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: disabled)
+     Active: active (running) since Sun 2025-10-05 16:12:33 UTC; 20min ago
+    Process: 42830 ExecStartPre=/usr/bin/rm -f /run/nginx.pid (code=exited, status=0/SUCCESS)
+    Process: 42831 ExecStartPre=/usr/sbin/nginx -t (code=exited, status=0/SUCCESS)
+    Process: 42832 ExecStart=/usr/sbin/nginx (code=exited, status=0/SUCCESS)
+   Main PID: 42833 (nginx)
+      Tasks: 2 (limit: 1106)
+     Memory: 2.5M
+        CPU: 44ms
+     CGroup: /system.slice/nginx.service
+             ├─42833 "nginx: master process /usr/sbin/nginx"
+             └─42834 "nginx: worker process"
+
+Oct 05 16:12:32 ip-172-31-20-229.ec2.internal systemd[1]: Starting nginx.service - The nginx HTTP and reverse proxy server...
+Oct 05 16:12:32 ip-172-31-20-229.ec2.internal nginx[42831]: nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+Oct 05 16:12:32 ip-172-31-20-229.ec2.internal nginx[42831]: nginx: configuration file /etc/nginx/nginx.conf test is successful
+Oct 05 16:12:33 ip-172-31-20-229.ec2.internal systemd[1]: Started nginx.service - The nginx HTTP and reverse proxy server.
+[ec2-user@ip-172-31-20-229 ~]$ 
+```
+3. Verify /opt/config.txt permissions:
+```
+[ec2-user@ip-172-31-20-229 ~]$ ls -l /opt/config.txt
+-rw-rw----. 1 root devops 81 Oct  5 15:25 /opt/config.txt
+[ec2-user@ip-172-31-20-229 ~]$ 
+```
+
+4. sample screenshot
+![ansible-playbook-run](images/ansible-playbook-run.png)
