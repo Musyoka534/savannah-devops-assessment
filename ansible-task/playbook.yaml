@@ -1,0 +1,65 @@
+---
+- name: Configure VM with PostgreSQL and Nginx
+  hosts: webserver
+  become: true
+  tasks:
+
+    - name: Ensure devops group exists
+      group:
+        name: devops
+        state: present
+
+    - name: Create /opt directory if not exists
+      file:
+        path: /opt
+        state: directory
+        mode: '0755'
+
+    - name: Copy config file to /opt
+      copy:
+        src: files/config.txt
+        dest: /opt/config.txt
+        owner: root
+        group: devops
+        mode: '0660'
+
+    - name: Install PostgreSQL server and client
+      dnf:
+        name:
+          - postgresql15
+          - postgresql15-server
+        state: present
+
+    - name: Initialize PostgreSQL database
+      command: /usr/bin/postgresql-setup --initdb
+      args:
+        creates: /var/lib/pgsql/data/PG_VERSION
+
+    - name: Ensure PostgreSQL is enabled and running
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Install Nginx web server
+      dnf:
+        name: nginx
+        state: present
+
+    - name: Ensure Nginx is enabled and running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Create custom Nginx index page
+      copy:
+        content: |
+          <html>
+          <h1>Welcome to the DevOps Configured Server</h1>
+          <p>PostgreSQL and Nginx are running successfully.</p>
+          </html>
+        dest: /usr/share/nginx/html/index.html
+        owner: nginx
+        group: nginx
+        mode: '0644'
